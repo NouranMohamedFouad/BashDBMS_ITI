@@ -1,0 +1,66 @@
+#! /usr/bin/bash
+
+############################## Setting up the Database ######################################
+
+database="/home/nouran/Downloads/Bash/DBMS_PROJECT/database"
+
+if [[ -e $database ]]
+then
+        cd $database
+else
+        mkdir $database
+        cd $database
+fi
+
+echo "Database is Ready"
+
+########################## Main Menu Functionalities ########################################
+#to create a database
+create_database() 
+{
+    read -p "Please Enter Database's Name: " dbName
+    if [[ -e $dbName ]]
+    then
+        echo "Database already exists."
+    else
+        mkdir $dbName
+        echo "Database is created successfully."
+    fi
+}
+
+#to list databases
+list_databases() 
+{
+    echo "Databases in the system:"
+    ls
+}
+
+########################## Main Menu  ########################################
+PS3=$'\nPlease select an option: '
+
+
+select choice in "Create Database" "List Databases" "Connect To Databases" "Drop Database" "Exit"
+do
+    case $choice in
+        "Create Database")
+                create_database 
+            ;;
+        "List Databases")
+                list_databases
+            ;;
+        "Connect To Databases")
+            echo "You selected to connect to a database."
+            ;;
+        "Drop Database")
+            echo "You selected to drop a database."
+            ;;
+        "Exit") 
+            echo "Exiting..."
+            break
+            ;;
+        *)
+            echo "Invalid choice. Please choose from 1 to 5."
+            ;;
+    esac
+done
+
