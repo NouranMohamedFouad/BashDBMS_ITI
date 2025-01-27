@@ -2,7 +2,7 @@
 
 ############################## Setting up the Database ######################################
 
-database="/home/nouran/Downloads/Bash/DBMS_PROJECT/database"
+database="/home/youssefmedhat/DBMS_ITI/databse"
 
 if [[ -e $database ]]
 then
@@ -34,33 +34,77 @@ list_databases()
     echo "Databases in the system:"
     ls
 }
+#to connect to database
+connect_to_database(){
+    PS3=$'\nPlease select a database to connect to: '  
+    list_of_dbs=$(ls)  
+
+    select choice in $list_of_dbs  
+    do
+        if [ -n "$choice" ]; then 
+            cd "$choice"  
+            echo "You are now connected to $choice."
+            
+            break
+        else
+            echo "Invalid choice. Please select a valid database."
+        fi
+    done
+cd $database
+PS3=$'\nPlease select an option: '
+}
+#to drop database
+drop_database(){
+    PS3=$'\nPlease select a database to drop : '  
+    list_of_dbs=$(ls)  
+    
+    select choice in $list_of_dbs  
+    do
+        if [ -n "$choice" ]; then 
+            rmdir $choice 
+            echo "You are dropped table $choice."
+            break
+        else
+            echo "Invalid choice. Please select a valid database."
+        fi
+    done
+cd $database
+PS3=$'\nPlease select an option: '
+}
 
 ########################## Main Menu  ########################################
 PS3=$'\nPlease select an option: '
-
-
-select choice in "Create Database" "List Databases" "Connect To Databases" "Drop Database" "Exit"
+wantsToExit=1
+while [[ $wantsToExit -eq 1 ]]
 do
-    case $choice in
-        "Create Database")
-                create_database 
-            ;;
-        "List Databases")
-                list_databases
-            ;;
-        "Connect To Databases")
-            echo "You selected to connect to a database."
-            ;;
-        "Drop Database")
-            echo "You selected to drop a database."
-            ;;
-        "Exit") 
-            echo "Exiting..."
-            break
-            ;;
-        *)
-            echo "Invalid choice. Please choose from 1 to 5."
-            ;;
-    esac
+	echo -e '<------------------- WELCOME TO THE DATABASE ---------------------> \n'
+	select choice in "Create Database" "List Databases" "Connect To Databases" "Drop Database" "Exit"
+	do
+	    case $choice in
+		"Create Database")
+		        create_database 
+		        break
+		    ;;
+		"List Databases")
+		        list_databases
+		        break
+		    ;;
+		"Connect To Databases")
+		    	connect_to_database
+		    	break
+		    ;;
+		"Drop Database")
+		    	drop_database
+		    	break
+		    ;;
+		"Exit") 
+		    	wantsToExit=0
+		    	echo "Exiting..."
+		    	break
+		    ;;
+		*)
+		    echo "Invalid choice. Please choose from 1 to 5."
+		    ;;
+	    esac
+	done
 done
-
