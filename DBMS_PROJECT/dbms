@@ -2,9 +2,42 @@
 
 shopt -s extglob
 
+
+#!/bin/bash
+
+# Define text colors
+RED='\e[31m'
+GREEN='\e[32m'
+YELLOW='\e[33m'
+BLUE='\e[34m'
+MAGENTA='\e[35m'
+CYAN='\e[36m'
+WHITE='\e[37m'
+
+# Define background colors
+BG_RED='\e[41m'
+BG_GREEN='\e[42m'
+BG_YELLOW='\e[43m'
+BG_BLUE='\e[44m'
+BG_MAGENTA='\e[45m'
+BG_CYAN='\e[46m'
+BG_WHITE='\e[47m'
+
+# Text attributes
+BOLD='\e[1m'
+UNDERLINE='\e[4m'
+RESET='\e[0m' # Reset to default
+
+# Example usage
+#echo -e "${RED}This is red text${RESET}"
+#echo -e "${GREEN}This is green text${RESET}"
+#echo -e "${BOLD}${BLUE}Bold blue text${RESET}"
+#echo -e "${UNDERLINE}${YELLOW}Underlined yellow text${RESET}"
+#echo -e "${WHITE}${BG_RED}White text on red background${RESET}"
+
 ############################## Setting up the Database ######################################
 
-database="/home/nouran/Downloads/Bash/DBMS_PROJECT/database"
+database="/home/youssefmedhat/Downloads/Bash/DBMS_PROJECT/database"
 
 if [[ -e $database ]]
 then
@@ -14,7 +47,7 @@ else
         cd $database
 fi
 
-echo "Database is Ready"
+#echo -e "${BOLD}${CYAN}Database is Ready${RESET}"
 
 
 ########################## Database Menu Functionalities ########################################
@@ -22,7 +55,7 @@ echo "Database is Ready"
 # To create a table
 create_table() 
 {
-    read -p "Enter table name: " tableName
+    read -p "${BOLD}${CYAN} Enter table name: ${RESET}" tableName
 
     if [[ -e "$tableName" ]]
     then
@@ -30,7 +63,6 @@ create_table()
     else
         touch "$tableName"
         touch "$tableName.meta"
-
         echo "Define columns for the table."
         read -p "Enter the number of columns: " columnCount
         while ! [[ $columnCount =~ ^[0-9]+$ ]]
@@ -65,7 +97,7 @@ create_table()
             rm "$tableName" "$tableName.meta" 
             return
         fi
-        echo "Table $tableName created successfully with its metadata."
+        echo -e "${BOLD}${GREEN}Table $tableName created successfully with its metadata.${RESET}"
     fi
 }
 
@@ -73,14 +105,14 @@ create_table()
 # To list tables
 list_tables()
 {
-    echo "Tables in the database:"
+    echo -e "${BOLD}${CYAN}Tables in the database:"
     ls *.meta
 }
 
 #insert into table
 insert_into_table() 
 {
-    read -p "Enter the name of the table to insert data into: " tableName
+    read -p "${BOLD}${CYAN}Enter the name of the table to insert data into: ${RESET}" tableName
 
     if [[ ! -e "$tableName" ]]
     then
@@ -110,6 +142,72 @@ insert_into_table()
     echo "$row" >> "$tableName"
     echo "Data inserted successfully into $tableName."
 }
+#select from table
+select_from_table()
+{
+    PS3=$'\nPlease select a table to view from : '  
+    tables=$(ls)  
+    echo
+
+    filtered_tables=""
+    for name in $tables; do 
+        if [[ ! $name =~ \.meta$ ]]; then
+            filtered_tables+="$name " 
+        fi
+    done
+    select choice in $filtered_tables
+    do
+        if [ -n "$choice" ]; then 
+            tableName=$choice
+            break
+        fi
+    done
+
+    PS3=$'\nPlease select option : '  
+    select option in "Display all table" "Display one row"
+do
+
+    case $option in
+    "Display all table")
+    	awk -F ":" '{printf "%s        ", $1} END {print ""}' "$tableName.meta"
+        awk -F ":" '{
+            i = 1
+            while (i <= NF) {
+                if (i > 1) {
+                    printf "       "  # Print space between fields
+                }
+                printf "%s", $i  # Print each field without a newline
+                i++
+            }
+            print ""  # Print a newline after all fields for the current row
+        }' $tableName
+        break
+        ;;
+    
+    "Display one row")
+        read -p "Enter PK to display: " id
+        awk -F ":" '{printf "%s        ", $1} END {print ""}' "$tableName.meta"
+        awk -F ":" -v id="$id" '{
+            if ($1 == id) {
+                i = 1
+                while (i <= NF) {
+                    if (i > 1) {
+                    printf "       "  # Print space between fields
+                    }
+                    printf "%s", $i  # Print each field without a newline
+                    i++
+                }
+                print ""  # Print a newline after all fields for the current row
+            }
+        }' $tableName
+        break
+        ;; 
+    esac
+done
+
+
+    PS3=$'\nPlease select an option: '
+}
 
 
 
@@ -118,7 +216,7 @@ insert_into_table()
 #to create a database
 create_database() 
 {
-    read -p "Please Enter Database's Name: " dbName
+    read -p "${BOLD}${CYAN}Please Enter Database's Name: ${RESET}" dbName
     if [[ -e $dbName ]]
     then
         echo "Database already exists."
@@ -131,7 +229,7 @@ create_database()
 #to list databases
 list_databases() 
 {
-    echo "Databases in the system:"
+    echo "${BOLD}${CYAN}Databases in the system:"
     ls
 }
 
@@ -142,11 +240,11 @@ connect_to_database(){
     then
     	echo "No databases in the system!"
     else
-    select choice in $list_of_dbs  
+    select choice in $list_of_dbs 
     do
         if [ -n "$choice" ]; then 
             cd "$choice"  
-            echo "You are now connected to $choice."
+            echo -e "${BOLD}${CYAN}You are now connected to $choice.${RESET}"
             
             database_menu
            
@@ -190,7 +288,8 @@ database_menu() {
     while true
     do
         echo " "
-        echo "<------------- DATABASE MENU ------------->"
+        echo -e "${BOLD}${CYAN}<------------- DATABASE MENU ------------->${RESET}"
+        echo " "
         select dbChoice in "Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Back to Main Menu"
         do
             case $dbChoice in
@@ -211,6 +310,7 @@ database_menu() {
                     break
                     ;;
                  "Select From Table")
+                    select_from_table
                     break
                     ;;
                 "Delete From Table")
@@ -221,7 +321,7 @@ database_menu() {
                     return
                     ;;
                 *)
-                    echo "Invalid choice. Please choose from the menu."
+                    echo -e "${BOLD}${RED}Invalid choice. Please choose from the menu.${RESET}"
                     ;;
             esac
         done
@@ -235,7 +335,8 @@ wantsToExit=1
 while [[ $wantsToExit -eq 1 ]]
 do
         echo " "
-	echo -e '<------------------- WELCOME TO THE DATABASE ---------------------> \n'
+	echo -e "${BOLD}${CYAN}<------------------- WELCOME TO THE DATABASE --------------------->${RESET}"
+	echo ""
 	select choice in "Create Database" "List Databases" "Connect To Databases" "Drop Database" "Exit"
 	do
             clear
@@ -262,7 +363,7 @@ do
 		    	break
 		    ;;
 		*)
-		    echo "Invalid choice. Please choose from 1 to 5."
+		    echo -e "${BOLD}${RED} Invalid choice. Please choose from 1 to 5.C ${RESET}"
 		    ;;
 	    esac
 	done
