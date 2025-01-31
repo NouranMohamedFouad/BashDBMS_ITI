@@ -164,46 +164,115 @@ select_from_table()
     done
 
     PS3=$'\nPlease select option : '  
+    if [ ! -s "$tableName" ]; then
+    	clear
+	echo "Table is Empty!"
+	return
+	fi
     select option in "Display all table" "Display one row"
 do
-
+clear
     case $option in
     "Display all table")
-    	awk -F ":" '{printf "%s        ", $1} END {print ""}' "$tableName.meta"
-        awk -F ":" '{
+    	awk -F ":" '
+    	BEGIN{col=1}
+    	{
+    	printf "\033[;%dH|%s", col,$1
+    	col+=15
+    	} END {print ""}' "$tableName.meta"
+        awk -F ":" '
+        BEGIN{row=2
+        col=1
+        }
+        {
             i = 1
+            col=1
             while (i <= NF) {
-                if (i > 1) {
-                    printf "       "  # Print space between fields
-                }
-                printf "%s", $i  # Print each field without a newline
+    	printf "\033[%d;%dH|%s", row,col,$i
                 i++
+                col+=15
             }
-            print ""  # Print a newline after all fields for the current row
+                row+=1
         }' $tableName
         break
         ;;
     
-    "Display one row")
-        read -p "Enter PK to display: " id
-        awk -F ":" '{printf "%s        ", $1} END {print ""}' "$tableName.meta"
-        awk -F ":" -v id="$id" '{
+"Display one row")
+    read -p "Enter PK to display: " id
+    clear
+
+    if  ! grep -q "^$id" "$tableName";  then
+    echo "Invalid ID!"
+    else
+        awk -F ":" '
+        BEGIN {col=1}
+        {
+            printf "\033[0;%dH|%s", col, $1
+            col += 15
+        }
+        END {print ""}' "$tableName.meta"
+
+        awk -F ":" -v id="$id" '
+        BEGIN {row = 2; col = 1}
+        {
             if ($1 == id) {
+                
                 i = 1
+                col = 1
                 while (i <= NF) {
-                    if (i > 1) {
-                    printf "       "  # Print space between fields
-                    }
-                    printf "%s", $i  # Print each field without a newline
+                    printf "\033[%d;%dH|%s", row, col, $i
                     i++
+                    col += 15
                 }
-                print ""  # Print a newline after all fields for the current row
+                row += 1
             }
-        }' $tableName
-        break
+        }
+        ' "$tableName"
+    fi
+    break
+
         ;; 
     esac
 done
+
+
+    PS3=$'\nPlease select an option: '
+}
+#delete from table
+delete_from_table(){
+    PS3=$'\nPlease select a table to delete from : '  
+    tables=$(ls)  
+    echo
+
+    filtered_tables=""
+    for name in $tables; do 
+        if [[ ! $name =~ \.meta$ ]]; then
+            filtered_tables+="$name " 
+        fi
+    done
+    select choice in $filtered_tables
+    do
+        if [ -n "$choice" ]; then 
+            tableName=$choice
+            break
+        fi
+    done
+ if [ ! -s "$tableName" ]; then
+    	clear
+	echo "Table is Empty!"
+	return
+	fi
+    PS3=$'\nPlease select option : '  
+ read -p "Enter PK to delete: " id
+    clear
+
+    if  ! grep -q "^$id" "$tableName";  then
+    echo "Invalid ID!"
+    else
+    sed -i "/$id/d" "$tableName"
+    echo "item $id deleted succesfully!"
+
+    fi
 
 
     PS3=$'\nPlease select an option: '
@@ -290,8 +359,9 @@ database_menu() {
         echo " "
         echo -e "${BOLD}${CYAN}<------------- DATABASE MENU ------------->${RESET}"
         echo " "
-        select dbChoice in "Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Back to Main Menu"
+        select dbChoice in "Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Delete From Table" "Back to Main Menu"
         do
+        clear
             case $dbChoice in
                 "Create Table")
                     create_table
@@ -314,6 +384,7 @@ database_menu() {
                     break
                     ;;
                 "Delete From Table")
+                    delete_from_table
                     break
                     ;;
                 "Back to Main Menu")
