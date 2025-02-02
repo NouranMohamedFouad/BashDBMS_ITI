@@ -29,7 +29,7 @@ RESET='\e[0m' # Reset to default
 
 ############################## Setting up the Database ######################################
 
-database="/home/nouran/Downloads/Bash/BashDBMS_ITI/DBMS_PROJECT/databases"
+database="/home/youssefmedhat/BashDBMS_ITI/DBMS_PROJECT/databases"
 
 if [[ -e $database ]]
 then
@@ -425,7 +425,62 @@ delete_from_table(){
 
     PS3=$'\nPlease select an option: '
 }
+#update table
+update_table(){
+    PS3=$'\nPlease select a table to delete from : '  
+    tables=$(ls)  
+    echo
 
+    filtered_tables=""
+    for name in $tables; do 
+        if [[ ! $name =~ \.meta$ ]]; then
+            filtered_tables+="$name " 
+        fi
+    done
+    select choice in $filtered_tables
+    do
+        if [ -n "$choice" ]; then 
+            tableName=$choice
+            break
+        fi
+    done
+ if [ ! -s "$tableName" ]; then
+    	clear
+	echo "Table is Empty!"
+	return
+	fi
+    PS3=$'\nPlease select option : '  
+ read -p "Enter PK to update: " id
+    clear
+
+    if  ! grep -q "^$id" "$tableName";  then
+    echo "Invalid ID!"
+    else
+declare -a colNames=()
+
+
+colNames=($(awk -F ":" '{ print $1 }' "$tableName.meta"))
+echo $colNames
+
+select col in $colNames
+do
+        if [ -n "$col" ]; then 
+            chosenCol=$col
+            
+            break
+        else
+                echo ""
+                echo -e "${BOLD}${RED}Choose a valid number Please${RESET}"
+                echo ""
+        fi
+    done
+
+    fi
+
+	
+    PS3=$'\nPlease select an option: '
+
+}
 
 
 #############################################################################################
@@ -533,7 +588,7 @@ database_menu() {
         echo " "
         echo -e "${BOLD}${CYAN}<------------- DATABASE MENU ------------->${RESET}"
         echo " "
-        select dbChoice in "Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Delete From Table" "Back to Main Menu"
+        select dbChoice in "Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Delete From Table" "Update Table" "Back to Main Menu"
         do
         clear
             case $dbChoice in
@@ -559,6 +614,10 @@ database_menu() {
                     ;;
                 "Delete From Table")
                     delete_from_table
+                    break
+                    ;;
+                    "Update Table")
+                    update_table
                     break
                     ;;
                 "Back to Main Menu")
