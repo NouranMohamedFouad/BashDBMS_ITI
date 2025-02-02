@@ -3,8 +3,6 @@
 shopt -s extglob
 
 
-#!/bin/bash
-
 # Define text colors
 RED='\e[31m'
 GREEN='\e[32m'
@@ -28,16 +26,10 @@ BOLD='\e[1m'
 UNDERLINE='\e[4m'
 RESET='\e[0m' # Reset to default
 
-# Example usage
-#echo -e "${RED}This is red text${RESET}"
-#echo -e "${GREEN}This is green text${RESET}"
-#echo -e "${BOLD}${BLUE}Bold blue text${RESET}"
-#echo -e "${UNDERLINE}${YELLOW}Underlined yellow text${RESET}"
-#echo -e "${WHITE}${BG_RED}White text on red background${RESET}"
 
 ############################## Setting up the Database ######################################
 
-database="/home/youssefmedhat/Downloads/Bash/DBMS_PROJECT/database"
+database="/home/nouran/Downloads/Bash/BashDBMS_ITI/DBMS_PROJECT/databases"
 
 if [[ -e $database ]]
 then
@@ -47,101 +39,246 @@ else
         cd $database
 fi
 
-#echo -e "${BOLD}${CYAN}Database is Ready${RESET}"
-
-
 ########################## Database Menu Functionalities ########################################
+column_exists() {
+    name=$1
+    for col in ${columnNames[@]}
+    do
+        if [[ $col == $name ]]
+        then
+            return 0 
+        fi
+    done
+    return 1  
+}
 
 # To create a table
 create_table() 
 {
-    read -p "${BOLD}${CYAN} Enter table name: ${RESET}" tableName
+    echo ""
+    echo -n -e "${BOLD}${CYAN}Enter table name: ${RESET}" 
+    read tableName
 
     if [[ -e "$tableName" ]]
     then
-        echo "Table already exists."
+        echo ""
+        echo -e "${BOLD}${RED}Table already exists.${RESET}"
     else
         touch "$tableName"
         touch "$tableName.meta"
-        echo "Define columns for the table."
-        read -p "Enter the number of columns: " columnCount
+        
+        echo -n -e "${BOLD}${CYAN}Enter the number of columns: ${RESET}" 
+        read columnCount
         while ! [[ $columnCount =~ ^[0-9]+$ ]]
         do
-            read -p "Please enter a valid number for column count: " columnCount
+            echo -n -e "${BOLD}${RED}Please enter a valid number for column count: ${RESET}" 
+            read columnCount  
         done
         
-        pkColumn=""
-  
-        for (( i=0;i<columnCount;i++ ))
+        echo ""
+        echo -e "${BOLD}${YELLOW}Choose how to handle the primary key:${RESET}"
+        echo ""
+        
+        declare -a columnNames
+        
+        select choice in "Auto-generate an 'id' column as the primary key" "Use the first attribute as the primary key"
         do
-            read -p "Enter name of column $((i+1)) : " columnName
-            read -p "Enter data type of column $((i+1)) (e.g. int,str,float,...): " columnType
-            if [[ -z "$pkColumn" ]]
-            then
-                read -p "Do you want to make this column the primary key (yes/no)? " isPK
-                 if [[ "$isPK" =~ ^([Yy][Ee][Ss]|[Yy])$ ]]
-                then
-                    pkColumn="$columnName"
-                    echo "$columnName:$columnType:PK" >> "$tableName.meta"
-                else
-                    echo "$columnName:$columnType" >> "$tableName.meta"
-                fi
-            else
-                echo "$columnName:$columnType" >> "$tableName.meta"
-            fi
+            case $choice in
+                "Auto-generate an 'id' column as the primary key" )
+                    echo "id:integer:pkAuto" > "$tableName.meta"
+                    columnNames+=("id") 
+                    echo ""
+                    echo -e "${BOLD}${GREEN}Auto-generated 'id' column as the primary key.${RESET}"
+                    echo ""
+                    break
+                    ;;
+                "Use the first attribute as the primary key")
+                
+                    echo -n -e "${BOLD}${CYAN}Enter name of the column: ${RESET}" 
+                    read columnName
+                    columnNames+=("$columnName")
+                    
+                    echo -e "${BOLD}${CYAN}Select data type of the column:${RESET}"
+                    select columnType in "integer" "string" "float"
+                    do
+                        if [[ -n "$columnType" ]]
+                        then
+                            echo "$columnName:$columnType:pk" > "$tableName.meta"
+                            break
+                        else
+                            echo -e "${BOLD}${RED}Invalid selection. Please choose a valid data type.${RESET}"
+                        fi
+                    done
+                    break
+                    ;;
+            esac        
         done
         
-        if [[ -z "$pkColumn" ]]
-        then
-            echo "No primary key was assigned. Please assign a primary key."
-            rm "$tableName" "$tableName.meta" 
-            return
-        fi
+        for (( i=1; i<columnCount; i++ ))
+        do
+            while true
+            do
+                echo -n -e "${BOLD}${CYAN}Enter name of column $((i+1)): ${RESET}" 
+                read columnName
+                if column_exists $columnName
+                then
+                    echo ""
+                    echo -e "${BOLD}${RED}Column name already exists. Enter a unique name.${RESET}"
+                    echo ""
+                else
+                    columnNames+=("$columnName")  
+                    break
+                fi
+            done
+            
+            echo -e "${BOLD}${CYAN}Select data type of column $((i+1)):${RESET}"
+            select columnType in "integer" "string" "float"
+            do
+                if [[ -n "$columnType" ]]
+                then
+                    echo "$columnName:$columnType" >> "$tableName.meta"
+                    break
+                else
+                    echo -e "${BOLD}${RED}Invalid selection. Please choose a valid data type.${RESET}"
+                fi
+            done
+        done
+        
+        echo ""
         echo -e "${BOLD}${GREEN}Table $tableName created successfully with its metadata.${RESET}"
+        echo ""
     fi
 }
 
 
-# To list tables
+# list tables
 list_tables()
 {
-    echo -e "${BOLD}${CYAN}Tables in the database:"
-    ls *.meta
+    echo ""
+    echo -e "${BOLD}${CYAN}Tables in the database:${RESET}"
+    tables=$(ls)  
+    echo ""
+
+    filtered_tables=""
+    for name in $tables
+    do 
+        if [[ ! $name =~ \.meta$ ]]
+        then
+            filtered_tables+="$name " 
+        fi
+    done
+    echo $filtered_tables
 }
 
-#insert into table
+## Insert Into tables
 insert_into_table() 
 {
-    read -p "${BOLD}${CYAN}Enter the name of the table to insert data into: ${RESET}" tableName
+    list_tables
+   
+    echo ""
+    echo -n -e "${BOLD}${CYAN}Enter the name of the table to insert data into: ${RESET}" 
+    read tableName
 
     if [[ ! -e "$tableName" ]]
     then
-        echo "Table does not exist."
+        echo ""
+        echo -e "${BOLD}${RED}Table does not exist.${RESET}"
+        echo ""
         return
     fi
 
     declare -a columns
     declare -a types
+
+    isAutoIncrement="false"
+   
+    read firstLine < $tableName.meta
+    primaryKey=$(echo $firstLine | cut -d':' -f3)
     
-    while read -r line; 
+    if [[ $primaryKey == "pkAuto" ]]
+    then
+            isAutoIncrement="true"
+    fi
+    
+    while read -r line
     do
         columnName=$(echo $line | cut -d':' -f1) 
         columnType=$(echo $line | cut -d':' -f2)
-        columns+=("$columnName")
-        types+=("$columnType")
+
+        columns+=($columnName)
+        types+=($columnType)
+
     done < "$tableName.meta"
 
     row=""
+
+    if [[ $isAutoIncrement == "true" ]]
+    then
+        if [[ -z "$tableName" ]] 
+        then
+            newID=1
+        else
+            lastID=$(tail -n 1 $tableName | cut -d':' -f1)
+            newID=$(( lastID + 1 ))
+        fi
+        row="$newID:"
+    fi
     
     for (( i=0; i<${#columns[@]} ; i++ ))
     do
-        read -p "Enter value for column ${columns[$i]} (${types[$i]}): " value
+        if [[ $isAutoIncrement == "true" ]]
+        then
+            isAutoIncrement="false"
+            continue 
+        fi
+
+        while true
+        do
+            echo ""
+            echo -n -e "${BOLD}${CYAN}Enter value for column ${columns[i]} (${types[i]}): ${RESET} " 
+            read value
+            
+            case ${types[i]} in
+                "integer")
+                    if [[ $value =~ ^[0-9]+$ ]]
+                    then
+                        break
+                    else
+                        echo -e "${BOLD}${RED}Invalid input. Please enter an integer.${RESET}"
+                    fi
+                    ;;
+                "string")
+                    if [[ $value =~ (^[a-zA-Z0-9_ ]+$) && $value =~ ([a-zA-Z]) ]]
+                    then
+                        break
+                    else
+                        echo -e "${BOLD}${RED}Invalid input. Please enter a valid string.${RESET}"
+                    fi
+                    ;;
+                "float")
+                    if [[ $value =~ ^[0-9]+\.[0-9]+$ ]]
+                    then
+                        break
+                    else
+                        echo -e "${BOLD}${RED}Invalid input. Please enter a valid float number.${RESET}"
+                    fi
+                    ;;
+                *)
+                   echo ""
+                    echo -e "${BOLD}${RED}Unknown data type.${RESET}"
+                    echo ""
+                    ;;
+            esac
+        done
         row+="$value:"
     done
     row="${row::-1}"
-    echo "$row" >> "$tableName"
-    echo "Data inserted successfully into $tableName."
+    echo $row >> $tableName
+    echo ""
+    echo -e "${BOLD}${GREEN}Data inserted successfully into $tableName.${RESET}"
 }
+
+
 #select from table
 select_from_table()
 {
@@ -160,13 +297,19 @@ select_from_table()
         if [ -n "$choice" ]; then 
             tableName=$choice
             break
+        else
+                echo ""
+                echo -e "${BOLD}${RED}Choose a valid number Please${RESET}"
+                echo ""
         fi
     done
 
     PS3=$'\nPlease select option : '  
     if [ ! -s "$tableName" ]; then
     	clear
-	echo "Table is Empty!"
+    	echo ""
+	echo -e "${BOLD}${RED}Table is Empty!${RESET}"
+	echo ""
 	return
 	fi
     select option in "Display all table" "Display one row"
@@ -174,6 +317,7 @@ do
 clear
     case $option in
     "Display all table")
+        echo ""
     	awk -F ":" '
     	BEGIN{col=1}
     	{
@@ -194,6 +338,7 @@ clear
             }
                 row+=1
         }' $tableName
+        echo ""
         break
         ;;
     
@@ -202,7 +347,9 @@ clear
     clear
 
     if  ! grep -q "^$id" "$tableName";  then
-    echo "Invalid ID!"
+    echo ""
+    echo -e "${BOLD}${RED}Invalid ID!${RESET}"
+    echo ""
     else
         awk -F ":" '
         BEGIN {col=1}
@@ -229,6 +376,7 @@ clear
         }
         ' "$tableName"
     fi
+    echo ""
     break
 
         ;; 
@@ -280,26 +428,45 @@ delete_from_table(){
 
 
 
-
+#############################################################################################
+#############################################################################################
 ########################## Main Menu Functionalities ########################################
+#############################################################################################
+#############################################################################################
+
+
 #to create a database
 create_database() 
 {
-    read -p "${BOLD}${CYAN}Please Enter Database's Name: ${RESET}" dbName
+    echo ""
+    echo -n -e "${BOLD}${CYAN}Please Enter Database's Name: ${RESET}"
+    read dbName
+
     if [[ -e $dbName ]]
     then
-        echo "Database already exists."
+        echo ""
+        echo -e "${BOLD}${RED}Database already exists.${RESET}"
     else
         mkdir $dbName
-        echo "Database $dbName is created successfully."
+        echo ""
+        echo -e "${BOLD}${GREEN}Database $dbName is created successfully.${RESET}"
     fi
 }
 
 #to list databases
 list_databases() 
 {
-    echo "${BOLD}${CYAN}Databases in the system:"
-    ls
+    list_of_dbs=$(ls)  
+    if [[ $list_of_dbs == "" ]]
+    then
+        echo ""
+    	echo -e "${BOLD}${RED}No databases in the system!${RESET}"
+    else
+        echo ""
+        echo -e "${BOLD}${CYAN}Databases in the system:${RESET}"
+        echo ""
+        echo $list_of_dbs
+    fi
 }
 
 connect_to_database(){
@@ -307,19 +474,21 @@ connect_to_database(){
     list_of_dbs=$(ls)  
     if [[ $list_of_dbs == "" ]]
     then
-    	echo "No databases in the system!"
+        echo ""
+    	echo -e "${BOLD}${RED}No databases in the system!${RESET}"
     else
     select choice in $list_of_dbs 
     do
         if [ -n "$choice" ]; then 
             cd "$choice"  
-            echo -e "${BOLD}${CYAN}You are now connected to $choice.${RESET}"
+            echo ""
+            echo -e "${BOLD}${GREEN}You are now connected to $choice.${RESET}"
             
             database_menu
-           
             break
         else
-            echo "Invalid choice. Please select a valid database."
+            echo ""
+            echo -e "${BOLD}${RED}Invalid choice. Please select a valid database.${RESET}"
         fi
     done
     fi
@@ -333,16 +502,19 @@ drop_database(){
     list_of_dbs=$(ls)  
     if [[ $list_of_dbs == "" ]]
     then
-    	echo "No databases in the system!"
+    	echo -e "${BOLD}${RED}No databases in the system!${RESET}"
     else
     select choice in $list_of_dbs  
     do
-        if [ -n "$choice" ]; then 
-            rmdir $choice 
-            echo "You are dropped table $choice."
+        if [ -n "$choice" ]
+        then 
+            rmdir  $choice 
+            echo ""
+            echo -e "${BOLD}${GREEN}You are dropped table $choice.${RESET}"
             break
         else
-            echo "Invalid choice. Please select a valid database."
+            echo ""
+            echo -e "${BOLD}${RED}Invalid choice. Please select a valid database.${RESET}"
         fi
     done
     fi
@@ -352,8 +524,10 @@ PS3=$'\nPlease select an option: '
 
 
 ########################## Database Menu ########################################
+
 database_menu() {
     PS3=$'\nPlease select an option: '
+    
     while true
     do
         echo " "
@@ -410,31 +584,38 @@ do
 	echo ""
 	select choice in "Create Database" "List Databases" "Connect To Databases" "Drop Database" "Exit"
 	do
-            clear
+            
 	    case $choice in
 		"Create Database")
+		        clear
 		        create_database 
 		        break
 		    ;;
 		"List Databases")
+		        clear
 		        list_databases
 		        break
 		    ;;
 		"Connect To Databases")
+		        clear
 		    	connect_to_database
 		    	break
 		    ;;
 		"Drop Database")
+		        clear
 		    	drop_database
 		    	break
 		    ;;
 		"Exit") 
 		    	wantsToExit=0
-		    	echo "Exiting..."
+		        echo ""
+		    	echo -e "${BOLD}${BG_CYAN}Exiting...${RESET}"
+		    	echo ""
 		    	break
 		    ;;
 		*)
-		    echo -e "${BOLD}${RED} Invalid choice. Please choose from 1 to 5.C ${RESET}"
+		    echo ""
+		    echo -e "${BOLD}${RED}Invalid choice. Please choose from 1 to 5. ${RESET}"
 		    ;;
 	    esac
 	done
