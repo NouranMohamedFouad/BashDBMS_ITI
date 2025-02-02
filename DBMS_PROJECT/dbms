@@ -29,7 +29,7 @@ RESET='\e[0m' # Reset to default
 
 ############################## Setting up the Database ######################################
 
-database="/home/youssefmedhat/BashDBMS_ITI/DBMS_PROJECT/databases"
+database="/home/nouran/Downloads/Bash/BashDBMS_ITI/DBMS_PROJECT/databases"
 
 if [[ -e $database ]]
 then
@@ -173,12 +173,35 @@ list_tables()
 ## Insert Into tables
 insert_into_table() 
 {
-    list_tables
-   
-    echo ""
-    echo -n -e "${BOLD}${CYAN}Enter the name of the table to insert data into: ${RESET}" 
-    read tableName
+    PS3=$'\nPlease select a table to insert into: '  
+    tables=$(ls)  
+    echo
 
+    filtered_tables=""
+    for name in $tables
+    do 
+        if [[ ! $name =~ \.meta$ ]]
+        then
+            filtered_tables+=$name 
+        fi
+    done
+    
+   echo -e "${BOLD}${CYAN}Tables' Names : ${RESET}"
+   echo ""
+  
+    select choice in $filtered_tables
+    do
+        if [ -n "$choice" ]
+        then 
+            tableName=$choice
+            break
+        else
+                echo ""
+                echo -e "${BOLD}${RED}Choose a valid number Please${RESET}"
+                echo ""
+        fi
+    done
+   
     if [[ ! -e "$tableName" ]]
     then
         echo ""
@@ -292,6 +315,10 @@ select_from_table()
             filtered_tables+="$name " 
         fi
     done
+    
+   echo -e "${BOLD}${CYAN}Tables' Names : ${RESET}"
+   echo ""
+   
     select choice in $filtered_tables
     do
         if [ -n "$choice" ]; then 
@@ -398,6 +425,10 @@ delete_from_table(){
             filtered_tables+="$name " 
         fi
     done
+    
+   echo -e "${BOLD}${CYAN}Tables' Names : ${RESET}"
+   echo ""
+   
     select choice in $filtered_tables
     do
         if [ -n "$choice" ]; then 
@@ -532,6 +563,8 @@ connect_to_database(){
         echo ""
     	echo -e "${BOLD}${RED}No databases in the system!${RESET}"
     else
+     echo -e "${BOLD}${CYAN}Databases' Names : ${RESET}"
+     echo ""
     select choice in $list_of_dbs 
     do
         if [ -n "$choice" ]; then 
