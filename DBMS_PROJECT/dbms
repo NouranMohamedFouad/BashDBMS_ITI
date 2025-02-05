@@ -35,6 +35,8 @@ sound_path="/home/nouran/Downloads/Bash/BashDBMS_ITI/DBMS_PROJECT/click.mp3"
 congratulations="/home/nouran/Downloads/Bash/BashDBMS_ITI/DBMS_PROJECT/congratulations.mp3"
 failure="/home/nouran/Downloads/Bash/BashDBMS_ITI/DBMS_PROJECT/failure.mp3"
 
+
+
 if [[ -e $database ]]
 then
         cd $database
@@ -97,6 +99,7 @@ create_table()
                     echo ""
                     echo -e "${BOLD}${GREEN}Auto-generated 'id' column as the primary key.${RESET}"
                     echo ""
+                    mpg123 -q $congratulations 
                     break
                     ;;
                 "Use the first attribute as the primary key")
@@ -114,6 +117,7 @@ create_table()
                             break
                         else
                             echo -e "${BOLD}${RED}Invalid selection. Please choose a valid data type.${RESET}"
+                            mpg123 -q $failure   
                         fi
                     done
                     break
@@ -132,6 +136,7 @@ create_table()
                     echo ""
                     echo -e "${BOLD}${RED}Column name already exists. Enter a unique name.${RESET}"
                     echo ""
+                   mpg123 -q $failure 
                 else
                     columnNames+=("$columnName")  
                     break
@@ -147,6 +152,7 @@ create_table()
                     break
                 else
                     echo -e "${BOLD}${RED}Invalid selection. Please choose a valid data type.${RESET}"
+                   mpg123 -q $failure 
                 fi
             done
         done
@@ -220,6 +226,7 @@ insert_into_table()
         else
                 echo ""
                 echo -e "${BOLD}${RED}Choose a valid number Please${RESET}"
+                mpg123 -q $failure 
                 echo ""
         fi
     done
@@ -290,6 +297,7 @@ insert_into_table()
                 while grep -q "^$value:" $tableName
                 do
                     echo -n -e "${BOLD}${RED}Primary key value '$value' already exists. Please enter a unique value: ${RESET}"
+                   mpg123 -q $failure 
                     read value    
                done
             fi
@@ -301,6 +309,7 @@ insert_into_table()
                         break
                     else
                         echo -e "${BOLD}${RED}Invalid input. Please enter an integer.${RESET}"
+                        mpg123 -q $failure 
                     fi
                     ;;
                 "string")
@@ -309,6 +318,7 @@ insert_into_table()
                         break
                     else
                         echo -e "${BOLD}${RED}Invalid input. Please enter a valid string.${RESET}"
+                        mpg123 -q $failure 
                     fi
                     ;;
                 "float")
@@ -317,11 +327,13 @@ insert_into_table()
                         break
                     else
                         echo -e "${BOLD}${RED}Invalid input. Please enter a valid float number.${RESET}"
+                        mpg123 -q $failure 
                     fi
                     ;;
                 *)
                    echo ""
                     echo -e "${BOLD}${RED}Unknown data type.${RESET}"
+                    mpg123 -q $failure 
                     echo ""
                     ;;
             esac
@@ -332,6 +344,7 @@ insert_into_table()
     echo $row >> $tableName
     echo ""
     echo -e "${BOLD}${GREEN}Data inserted successfully into $tableName.${RESET}"
+    mpg123 -q $congratulations 
 }
 
 
@@ -369,6 +382,7 @@ select_from_table()
     	clear
     	echo ""
 	echo -e "${BOLD}${RED}Table is Empty!${RESET}"
+        mpg123 -q $failure 
 	echo ""
 	return
 	fi
@@ -409,6 +423,7 @@ clear
     if  ! grep -q "^$id" "$tableName";  then
     echo ""
     echo -e "${BOLD}${RED}Invalid ID!${RESET}"
+    mpg123 -q $failure 
     echo ""
     else
         awk -F ":" '
@@ -472,6 +487,7 @@ delete_from_table(){
  if [ ! -s "$tableName" ]; then
     	clear
 	echo "Table is Empty!"
+	mpg123 -q $failure 
 	return
 	fi
     PS3=$'\nPlease select option : '  
@@ -479,10 +495,12 @@ delete_from_table(){
     clear
 
     if  ! grep -q "^$id" "$tableName";  then
-    echo "Invalid ID!"
+        echo "Invalid ID!"
+        mpg123 -q $failure 
     else
     sed -i "/$id/d" "$tableName"
     echo "item $id deleted succesfully!"
+    mpg123 -q $congratulations 
 
     fi
 
@@ -553,6 +571,7 @@ update_table(){
     if [ ! -s "$tableName" ]; then
     	clear
 	echo "Table is Empty!"
+        mpg123 -q $failure 
 	return
     fi
     PS3=$'\nPlease select option : '  
@@ -562,6 +581,8 @@ update_table(){
     if  ! grep -q "^$id" "$tableName"
     then
         echo "Invalid PK !"
+        mpg123 -q $failure 
+        
     else
     
         declare -a colNames=()
@@ -589,6 +610,7 @@ update_table(){
                 newRecord=$(IFS=':'; echo "${fields[*]}")
                 sed -i "${line}s/.*/$newRecord/" $tableName
                 echo "Record updated successfully."
+                mpg123 -q $congratulations 
         else
             echo "Record not found!"
         fi
@@ -668,6 +690,7 @@ connect_to_database(){
         else
             echo ""
             echo -e "${BOLD}${RED}Invalid choice. Please select a valid database.${RESET}"
+            mpg123 -q $failure 
         fi
     done
     fi
@@ -689,7 +712,8 @@ drop_database(){
     do
         if [ -n "$choice" ]
         then 
-            rmdir  $choice 
+            rm -rf $choice
+
             echo ""
             echo -e "${BOLD}${GREEN}You are dropped table $choice.${RESET}"
             mpg123 -q $congratulations 
@@ -697,6 +721,7 @@ drop_database(){
         else
             echo ""
             echo -e "${BOLD}${RED}Invalid choice. Please select a valid database.${RESET}"
+            mpg123 -q $failure
         fi
     done
     fi
@@ -718,6 +743,7 @@ database_menu() {
         select dbChoice in "Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Delete From Table" "Update Table" "Back to Main Menu"
         do
         clear
+           mpg123 -q $sound_path
             case $dbChoice in
                 "Create Table")
                     create_table
