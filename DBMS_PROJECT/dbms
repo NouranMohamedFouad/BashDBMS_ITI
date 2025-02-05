@@ -277,12 +277,22 @@ insert_into_table()
             isAutoIncrement="false"
             continue 
         fi
-
+        
         while true
         do
             echo ""
             echo -n -e "${BOLD}${CYAN}Enter value for column ${columns[i]} (${types[i]}): ${RESET} " 
             read value
+            
+            
+            if [[ $i -eq 0 ]]
+            then
+                while grep -q "^$value:" $tableName
+                do
+                    echo -n -e "${BOLD}${RED}Primary key value '$value' already exists. Please enter a unique value: ${RESET}"
+                    read value    
+               done
+            fi
             
             case ${types[i]} in
                 "integer")
@@ -316,7 +326,7 @@ insert_into_table()
                     ;;
             esac
         done
-        row+="$value:"
+        row+="$value:" 
     done
     row="${row::-1}"
     echo $row >> $tableName
@@ -521,9 +531,6 @@ drop_table(){
 }
 
 
-
-
-
 #update table
 update_table(){
     PS3=$'\nPlease select a table to update : '  
@@ -543,42 +550,50 @@ update_table(){
             break
         fi
     done
- if [ ! -s "$tableName" ]; then
+    if [ ! -s "$tableName" ]; then
     	clear
 	echo "Table is Empty!"
 	return
-	fi
+    fi
     PS3=$'\nPlease select option : '  
- read -p "Enter PK to update: " id
+    read -p "Enter PK to update: " id
     clear
 
-    if  ! grep -q "^$id" "$tableName";  then
-    echo "Invalid ID!"
+    if  ! grep -q "^$id" "$tableName"
+    then
+        echo "Invalid PK !"
     else
-declare -a colNames=()
+    
+        declare -a colNames=()
+        
+        colNames=$(tail -n +2 "$tableName.meta" | cut -f1 -d:)
+        select choice in $colNames
+        do
+                if [ -n "$choice" ]
+                then 
+                    col=$choice
+                    colIndex=$REPLY
+                    break
+                fi
+         done
+         
+        read -p "Enter new value for $col: " newValue
+        line=$(grep -n "^$id" "$tableName" | cut -d: -f1)
 
-
-colNames=($(awk -F ":" '{ print $1 }' "$tableName.meta"))
-echo $colNames
-
-select col in $colNames
-do
-        if [ -n "$col" ]; then 
-            chosenCol=$col
-            
-            break
+        if [ -n "$line" ]
+        then
+                oldRecord=$(sed -n "${line}p" $tableName)
+                declare -a fields
+                IFS=':' read -r -a fields <<< $oldRecord
+                fields[$colIndex]=$newValue
+                newRecord=$(IFS=':'; echo "${fields[*]}")
+                sed -i "${line}s/.*/$newRecord/" $tableName
+                echo "Record updated successfully."
         else
-                echo ""
-                echo -e "${BOLD}${RED}Choose a valid number Please${RESET}"
-                echo ""
+            echo "Record not found!"
         fi
-    done
-
-    fi
-
-	
-    PS3=$'\nPlease select an option: '
-
+fi
+PS3=$'\nPlease select an option: '
 }
 
 

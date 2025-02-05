@@ -1,0 +1,3 @@
+id:integer:pk
+name:string
+age:integer
