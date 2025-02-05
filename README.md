@@ -28,12 +28,16 @@ This DBMS provides an intuitive, menu-driven experience for database management.
 1️⃣ **Clone the repository** or download the script:  
    ```
    git clone <repo-url>
-   ```  
-2️⃣ **Grant execution permissions:**  
+   ```
+2️⃣ **Install dependencies** (including mpg123 for audio support):
+   ```
+   sudo apt update && sudo apt install mpg123 -y
+   ```
+3️⃣ **Grant execution permissions:**  
    ```
    chmod +x dbms
    ```  
-3️⃣ **Run the script and start managing your databases:**  
+4️⃣  **Run the script and start managing your databases:**  
    ```
    ./dbms
    ```  
